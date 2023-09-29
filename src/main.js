@@ -19,7 +19,10 @@ const mouse = {
   y:0,
   down:false,
   moved:false,
-  first:false
+  first:false,
+  touchMult:0,
+  touchTarg:0, 
+  touching:false,
 }
 const clock = new THREE.Clock();
 
@@ -75,6 +78,8 @@ function init() {
   brtCont.uniforms[ 'brightness' ].value = .1;
 
   controls = new OrbitControls( camera, renderer.domElement );
+  //controls.autoRotate = true;
+  //controls.autoRotateSpeed = 2.0; // 3
   //controls.listenToKeyEvents( window ); // optional
 
   window.addEventListener( 'resize', onWindowResize );
@@ -82,7 +87,7 @@ function init() {
   document.addEventListener( 'pointerdown', onPointerDown );
   document.addEventListener( 'pointerup', onPointerUp );
   
-  const light = new THREE.AmbientLight( 0xaaaaaa ); // soft white light
+  const light = new THREE.AmbientLight( 0xbbbbbb ); // soft white light
   scene.add( light );
 
   const dirLight = new THREE.DirectionalLight( 0xffffff, 3 );
@@ -165,10 +170,10 @@ function handleLoadModel(){
   });
 
   const loads = ["mountain","minimal","mother","gradient", "everything-human-12for-glb", "gradient-rock-plants-7"];
-  //loader2.load( loads[Math.floor(Math.random()*loads.length)]+'.glb', function ( gltf ) {
+  loader2.load( loads[ Math.floor( Math.random()*loads.length) ]+'.glb', function ( gltf ) {
   //loader2.load( 'gradient-3.glb', function ( gltf ) {
   //loader2.load( 'everything-human-12for-glb.glb', function ( gltf ) {
-  loader2.load( 'gradient.glb', function ( gltf ) {
+  //loader2.load( 'gradient.glb', function ( gltf ) {
       //
       //document.getElementById("loading").style.display = "none"; 
       loadingHelper.kill();
@@ -240,6 +245,7 @@ function handleMeshInteraction(isPointerDown){
     if ( intersects.length > 0 ) {
   //    console.log(intersects[0])
       if(mouse.moved){
+        mouse.touching = true;
         mouse.first = true;
         rawPoint.copy(intersects[0].point);
       }
@@ -250,6 +256,8 @@ function handleMeshInteraction(isPointerDown){
       
       //
       
+    }else{
+      mouse.touching = false;
     }
 
   }
@@ -300,8 +308,20 @@ function animate() {
   
   
   iInc += delta * iSpeed;
-  if(mouse.first)
-    iSize = 2.0 + ((.5+(Math.sin(iInc)*.5))*1.2);
+  
+  if(mouse.touching && mouse.down){
+    mouse.touchTarg = 1;
+  }else{
+    mouse.touchTarg = 0;
+  }
+  
+  mouse.touchMult += (mouse.touchTarg-mouse.touchMult)*(delta*2.2);
+  
+  if(mouse.first){
+    //iSize = (2.0 + ((.5+(Math.sin(iInc)*.5))*1.2))*mouse.touchMult;
+    iSize = (4)*mouse.touchMult;
+  }
+  
   
   point.lerp(rawPoint,.2)
   
